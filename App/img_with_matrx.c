@@ -1,80 +1,141 @@
 #include "common.h"
 #include "include.h"
-#include "BumperCars_control.h"
-
-uint8 imgbuff[CAMERA_SIZE];                             //¶¨Òå´æ´¢½ÓÊÕÍ¼ÏñµÄÊı×é
-uint8 img[CAMERA_H][CAMERA_W];
+#include "arm_math.h"
+#include "img_with_matrx.h"
 
 
+extern uint8 imgbuff[CAMERA_SIZE];                             //å®šä¹‰å­˜å‚¨æ¥æ”¶å›¾åƒçš„æ•°ç»„
+extern uint8 img[CAMERA_H][CAMERA_W];
+float set_speed;
+float err=0;
+uint8 mode;
+uint8 minrow=20;
 
-#define uint32_t blocksize=CAMERA_W;
-#define uint8 maxrow=50;
-#define uint8 deadline=25;
-extern float_32_t set_speed;
-extern float_32_t err;
-float_32_t weights[CAMERA_W];
-float_32_t feature[CAMERA_H];
-float_32_t threshold_bottom=5;
-float_32_t threshold_top=10;
-float_32_t out;   
+uint32 blocksize=CAMERA_W/2;
+uint8 maxrow=50;
+uint8 deadline=25;
+int16 feature[60];
+uint8 threshold_bottom=5;
+uint8 threshold_top=100;
+   
+uint16 s_x2;
+int16 s_y;
+uint16 s_x;
+int16 s_xy;
+uint8 N;
+int16 a;
+int16 b;
 
+
+int16 find_the_feature(uint8 i,uint8 t,uint8 step,uint8 mode)
+{
+  uint8 l;
+  uint8 ll;
+  uint8 r;
+  uint8 rl;
+  uint8 flagl=39;
+  uint8 flagr=40;
+  int16 Y;
+  
+  s_x2=0;
+  s_y=0;
+  s_x=0;
+  s_xy=0;
+  N=0;
+  uint8 n=0;
+  int16 ret;
+  uint8 k; 
+  for(k=0;k<t;k+=step)
+  {
+    l=img[i+k][flagl];
+    r=img[i+k][flagr];
+    ll=img[i+k][flagl];
+    rl=img[i+k][flagr];
+   while((l+ll!=255)&&(flagl<80)&&(flagl>0))
+    {
  
-void get_weights()
-{
-  for(n=0;n<30;++n)
-    weights[n]=n;
-  for(n=0;n<30;++n)
-    weight[59-n]=-n;
+      if(l==0)
+        {
+          ll=l;
+          ++flagl;
+          l=img[i+k][flagl];
+          continue;
+        }
+      if(l==255)
+      {
+        ll=l;
+        --flagl;
+        l=img[i+k][flagl];
+        continue;
+      }
+    }
+     while((r+rl!=255)&&(flagr<80)&&(flagr>0))
+    {
+ 
+      if(r==0)
+        {
+          rl=r;
+          --flagr;
+          r=img[i+k][flagr];
+          continue;
+        }
+      if(r==255)
+      {
+        rl=r;
+        ++flagr;
+        r=img[i+k][flagr];
+        continue;
+      }
+    }
+   ++n;
+   }
+   Y=flagl+flagr-79;
+   feature[i+k]=Y;
+   if(mode==1)
+    {   
+      s_x2+=(60-i-k)*(60-i-k);
+      s_x+=(60-i-k);
+      s_y+=Y;
+      s_xy+=Y*(60-i-k);
+      ++N;
+    }
+   
+  if(mode==1)
+    {
+      b=(N*s_xy-s_x*s_y)/(N*s_x2-s_x*s_x);
+      a=(N*s_xy-s_x*s_y)/(N*s_x2-s_x*s_x);
+    }
+    ret=feature[i+k];
+    return ret;
+     
+ 
 }
-
-void find_the_feature (uint8 i)
-{
-  float_32_t feature;
-  arm_dot_prod_f32(&img[i][0],&weights,blocksize,&feature[i]);
-  }
   
-void imgprocess()
-{
-  uint8 minrow=5;
-  get_weights();
-  if ((abs(find_the_feature(minrow))<threshold_bottom)and(minrow<59))
-    ++minrow;
-    else if (abs(find_the_feature(minrow))<threshold_top)and(minrow>5)
-      --minrow;
-  
-if(minrow<deadline)
-   casual_time(minrow);
-else
-   emergency(minrow);
-}
 
 void casual_time(uint8 minrow)
-{uint16 s_x2=0;
-  uint16 s_y=0;
-  uint16 s_x=0;
-  uint16 s_xy=0;
-  uint8 N=0;
-  float a;
-  for(n=minrow;n<maxrow;n=n+3)
-  { find_the_feature(n);
-    s_x2+=n*n;
-    s_x+=n;
-    s_y+=feature[n];
-    s_xy=feature[n]*n;
-    ++N;
-  }
-  a=(N*s_xy-s_x*s_y)/(N*s_x2-s_x*s_x);
-  err=a;
+{
+  find_the_feature(minrow,5,3,1);
+  err=a*a+b*b;
+  mode=1;
 }
 void emergency(uint8 minrow)
-{float ave;
- uint16 sum=0;
-  for(n=0;n<10;++n)
-  {find_the_feature(minrow+n);
-  sum+=feature[minrow+n];
-  }
-  ave=sum/10;
-  err=ave;
-}
+{
   
+  find_the_feature(40,3,2,1);
+  err=a*a+b*b;
+  mode=2;
+}
+ 
+void imgprocess()
+{
+  int16 f;
+  uint16 a;
+  f=find_the_feature(minrow,1,1,0);
+  a=abs(f);
+  if(a<threshold_bottom)
+    casual_time(minrow);
+  else
+    emergency(minrow);
+}
+
   
