@@ -10,55 +10,65 @@
 #include "enter.h"
 #include "arm_math.h"
 /*!
- *  @brief      mainº¯Êý
+ *  @brief      mainï¿½ï¿½ï¿½ï¿½
  *  @since      v1.0
- *  @note       Ð¡³µÕûÌå¿ØÖÆ
+ *  @note       Ð¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
  */
-
-extern void imgprocess(void);
-
-
-void PIT0_IRQHandler();
- uint8 imgbuff[CAMERA_SIZE];                             //¶¨Òå´æ´¢½ÓÊÕÍ¼ÏñµÄÊý×é
- q7_t img[CAMERA_W*CAMERA_H]; //¶¨Òå´æ´¢½âÑ¹ºóµÄÍ¼ÏñÊý×é£¨ÓÃÓÚ¶ÁÈ¡ÏñËØÖµ£¬Í¼Ïñ´¦Àí£©
+uint8 imgbuff[CAMERA_SIZE];                             //ï¿½ï¿½ï¿½ï¿½æ´¢ï¿½ï¿½ï¿½ï¿½Í¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+uint8 img[CAMERA_W*CAMERA_H]; //ï¿½ï¿½ï¿½ï¿½æ´¢ï¿½ï¿½Ñ¹ï¿½ï¿½ï¿½Í¼ï¿½ï¿½ï¿½ï¿½ï¿½é£¨ï¿½ï¿½ï¿½Ú¶ï¿½È¡ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½Í¼ï¿½ï¿½ï¿½ï¿½
 extern float32_t set_speed;
 extern float32_t err;
 void PORTA_IRQHandler();
 void DMA0_IRQHandler();
+void PIT0_IRQHandler();
 void PIT3_IRQHandler();
+//typedef struct   
+// {    
+ //   uint16_t    a[60];        
+ //   }my_data_t;       
+//flash_data_t data;
 
 void main(void)
 {
-    Site_t site     = {0, 0};                           //ÏÔÊ¾Í¼Ïñ×óÉÏ½ÇÎ»ÖÃ
-    Size_t imgsize  = {CAMERA_W, CAMERA_H};             //Í¼Ïñ´óÐ¡
-    Size_t size;                                       //ÏÔÊ¾ÇøÓòÍ¼Ïñ´óÐ¡
+    Site_t site     = {0, 0};                           //ï¿½ï¿½Ê¾Í¼ï¿½ï¿½ï¿½ï¿½ï¿½Ï½ï¿½Î»ï¿½ï¿½
+    Size_t imgsize  = {CAMERA_W, CAMERA_H};             //Í¼ï¿½ï¿½ï¿½Ð¡
+    Size_t size;                                       //ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½Í¼ï¿½ï¿½ï¿½Ð¡
     size.H = LCD_H;
     size.W = LCD_W;
 
-    DisableInterrupts;//½ûÖ¹ËùÓÐÖÐ¶Ï
+    uint8 i;
+    
+    DisableInterrupts;//ï¿½ï¿½Ö¹ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
     DELAY_MS(100); 
   
     All_init();
   
-    EnableInterrupts;//Ê¹ÄÜÖÐ¶Ï
-    //DIPSwitch_State();  //¼ì²é²¦Âë¿ª¹Ø×´Ì¬
-    //SCCB_WriteByte(OV7725_CNST, 0xff);
+    EnableInterrupts;//Ê¹ï¿½ï¿½ï¿½Ð¶ï¿½
+   //  for(i=0;i<5;++i)
+  //  {
+   //   camera_get_img();
+   //   img_extract((int8_t *)img,(uint8*)imgbuff,CAMERA_SIZE);//Í¼ï¿½ï¿½ï¿½ï¿½ï¿½Ý½ï¿½Ñ¹
+   // }
+    
+     DELAY_MS(100); 
     while(1)
     {
       camera_get_img();
       
       //if(DIPSwitch_buff&0x01)
-        //lcd_img_binary_z(site, size, imgbuff, imgsize,BLACK,WHITE); //LCDÏÔÊ¾
-      lcd_display();
+        //lcd_img_binary_z(site, size, imgbuff, imgsize,BLACK,WHITE); //LCDï¿½ï¿½Ê¾
+    
       //vcan_sendimg(imgbuff,CAMERA_SIZE);
       
-      img_extract((int8_t *)img,(uint8*)imgbuff,CAMERA_SIZE);//Í¼ÏñÊý¾Ý½âÑ¹
+      img_extract((int8_t *)img,(uint8*)imgbuff,CAMERA_SIZE);//Í¼ï¿½ï¿½ï¿½ï¿½ï¿½Ý½ï¿½Ñ¹
       
-      imgprocess();//Í¼Ïñ´¦Àí
+      imgprocess();//Í¼ï¿½ï¿½ï¿½ï¿½ 
+      
+      lcd_display();
     }
 }
 
-/*****×Ü¿ØÖÆ*****/
+/*****ï¿½Ü¿ï¿½ï¿½ï¿½*****/
 void PIT0_IRQHandler(void)
 {
     car_control();

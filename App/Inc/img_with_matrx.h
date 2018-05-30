@@ -2,7 +2,12 @@
 #include "include.h"
 #include "arm_math.h"
 void imgprocess(void);
-extern float err;
+void init_bias(void);
+extern float32_t a;
+extern float32_t b;
 extern float set_speed;
 extern uint8 mode;
-extern int8 feature[60][2];
+extern float feature[60][3];
+extern int16 f;
+extern uint8 l_upside;
+extern uint8 r_upside;

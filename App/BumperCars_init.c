@@ -1,13 +1,19 @@
 #include "common.h"
 #include "include.h"
+
 /*初始化所有*/
+extern void control_init(void);
 extern void PORTA_IRQHandler(void);
 extern void DMA0_IRQHandler(void);
+
 extern  uint8 imgbuff[CAMERA_SIZE];  
+
 void All_init(void)
 {
     sensor_init();
     interrupt_init();
+    control_init();
+    
 }
 
 /*传感器初始化*/
@@ -19,7 +25,7 @@ void sensor_init(void)
     disable_irq(PIT0_IRQn);
   
     //舵机初始化
-    ftm_pwm_init(FTM0, FTM_CH3,75,10.26,FTM0_CH3_PIN);//精度10000u，舵机居中
+    ftm_pwm_init(FTM0, FTM_CH3,50,6.89,FTM0_CH3_PIN);//精度10000u，舵机居中
   
     //电机初始化
     ftm_pwm_init(FTM3, FTM_CH0,10*1000,20,FTM3_CH0_PIN);        

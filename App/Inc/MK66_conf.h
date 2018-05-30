@@ -36,7 +36,7 @@
 
 
 
-#define USE_LCD         LCD_ST7735S        //选择使用的 LCD
+#define USE_LCD        LCD_ST7735S           //选择使用的 LCD
 
 
 /*
@@ -57,7 +57,7 @@
  * K60 KL26 主频和总线频率的关系 - 智能车资料区 - 山外论坛
  * http://www.vcan123.com/forum.php?mod=viewthread&tid=81&page=1&extra=#pid419
  */
-#define CORE_CLK                PLL180    // 从 PLL_e 里选择 已提供的 配置方案
+#define CORE_CLK                PLL180      // 从 PLL_e 里选择 已提供的 配置方案
                                             // bus 、 flex bus 、 flash 频率 都是 core 整数倍分频而来
 #define MAX_BUS_CLK             100         // bus      (bus        >= core/16  )
 #define MAX_FLEXBUS_CLK         25          // flex bus (flex bus   >= core/16  )

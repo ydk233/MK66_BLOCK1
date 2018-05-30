@@ -26,7 +26,7 @@ float32_t stree_mid;
 float32_t stree_min;
 float32_t stree;
 
-/*拨码开关状态检测/
+/*???????????/
 void DIPSwitch_State(void)
 {
     uint8 DIPSwitch_buff[4]={1,1,1,1};
@@ -57,13 +57,13 @@ void DIPSwitch_State(void)
  //   curva=10*4*S/L1/L2/L3;   
     
  //   return curva;/
-/*小车控制程序*/
+/*С?????????*/
 
 void stree_control(float stree)
 {
   stree+=stree_mid;
  ftm_pwm_duty(FTM0, FTM_CH3,stree);
- delta_speed=0;                //差速
+ delta_speed=0;                //????
  if(stree>stree_mid)
  { l_set=setspeed-delta_speed/2;
    r_set=setspeed+delta_speed/2;
@@ -75,9 +75,9 @@ void stree_control(float stree)
  }
 }
 void speed_control(void)
-{  float Kp = 0.338659;  //比例因子                                          
-   float Ki = 0.492012;  //积分因子  
-   float Kd = 0.035660;  //微分因子  
+{  float Kp = 0.338659;  //????????                                          
+   float Ki = 0.492012;  //????????  
+   float Kd = 0.035660;  //???????  
   float l_out=0;
   float r_out=0;
   //get_speed();
@@ -97,8 +97,8 @@ void speed_control(void)
 
 void car_control(void)
 { 
-   float32_t Kp = 0.001;  //比例因子                                          
-   float32_t Kd = 0;  //微分因子 
+   float32_t Kp = 0.001;  //????????                                          
+   float32_t Kd = 0;  //??????? 
    
      
    stree=stree+Kp*e0+Kd*(e0-2*e1+e2);

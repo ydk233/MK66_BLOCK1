@@ -1,73 +1,88 @@
 #include "common.h"
-#include "car_control.h"
+#include "include.h"
 #include "img_with_matrx.h"
 #include "arm_math.h"
-extern float32_t set_speed;
-extern float32_t err;
+#include "BumperCars_interrupt.h"
+
 extern uint8 mode;
+extern float32_t a;
+extern float32_t b;
+extern uint32 n_L,n_R;//ï¿½ï¿½ï¿½ï¿½ï¿½È«ï¿½Ö±ï¿½ï¿½ï¿½
+extern uint8 Dir_L,Dir_R;//ï¿½ï¿½ï¿½ï¿½ï¿½È«ï¿½Ö±ï¿½ï¿½ï¿½
+
+float32_t a_=0;
+float64_t st=0;
+float32_t l_out=0;
+float32_t r_out=0;
+uint32 l_speed;
+uint32 r_speed;
 uint16 FULL_ACC=30;
-
-float delta_speed;
-
-float setspeed=20;  //////
 float l_set=0;
 float r_set=0;
-float l_speed_err0=0;
-float l_speed_err1=0;
-float l_speed_err2=0;
-float r_speed_err0=0;
-float r_speed_err1=0;
-float r_speed_err2=0;
-float e0=0;
-float e1=0;
-float e2=0;
-float stree_max=7.45;
-float stree_mid=6.84;
-float stree_min=6.10;
+float setb=0;
+float stree=0;
+float delta_speed;
+float setspeed=40000;  //////
+float stree_max=7.55;
+float stree_mid=6.89;
+float stree_min=6.25;
+pid sa;
+pid sb;
+pid sl;
+pid sr;
 
-/*²¦Âë¿ª¹Ø×´Ì¬¼ì²â/
-void DIPSwitch_State(void)
+void control_init(void)
 {
-    uint8 DIPSwitch_buff[4]={1,1,1,1};
+   memset(sa.e, 0, 3U * sizeof(float32_t));
+   memset(sb.e, 0, 3U * sizeof(float32_t));
+   sb.p=3;    //bï¿½ï¿½ï¿½Æ²ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿Ç°ï¿½ï¿½ï¿½Ã£ï¿½
+   sb.i=0;
+   sb.d=0;
+   
+   sa.p=0.0137;    //now is perfect 0.0135
+   sa.i=0;
+   sa.d=0.;
   
-    *DIPSwitch_buff++=gpio_get(PTA5);
-    *DIPSwitch_buff++=gpio_get(PTA7);
-    *DIPSwitch_buff++=gpio_get(PTE25);
-    *DIPSwitch_buff++=gpio_get(PTE27); 
-}*/
-//float curvature_calculate(struct P point1,struct P point2,struct P point3)
-//{
- //   double S;
- //   double L1,L2,L3;
-//    int16 x1,y1,x2,y2,x3,y3;
-//    double curva;
-//    x1=point1.x;
- //   x2=point2.x;
-//    x3=point3.x;
-//    y1=point1.y;
-////    y3=point3.y;
-    
-//    L1=sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
- //   L2=sqrt((x3-x2)*(x3-x2)+(y3-y2)*(y3-y2));
-//    L3=sqrt((x3-x1)*(x3-x1)+(y3-y1)*(y3-y1));
-    
- //   S=(float)(1.0*((x2-x1)*(y3-y1)-(x3-x1)*(y2-y1))/2);
-    
- //   curva=10*4*S/L1/L2/L3;   
-    
- //   return curva;/
-/*Ð¡³µ¿ØÖÆ³ÌÐò*/
-
-void stree_control(float stree)
+   sl.p = 0.005;    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ²ï¿½ï¿½ï¿½ï¿½ï¿½×¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½              
+   sl.i = 0.0; 
+   sl.d = 0.0;
+  
+   sr.p = 0.005;                                         
+   sr.i = 0.00;    
+   sr.d = 0.0;
+}
+void get_speed(void)
+{ 
+  l_speed=n_L;
+  r_speed=n_R;
+ 
+}
+void stree_control(void)      
 {
-  stree+=stree_mid;
- if(stree>stree_max)
-   stree=stree_max;
- if(stree<stree_min)
-   stree=stree_min;
+  float stree;
+  //sb.e[0]=0;//Ë«ï¿½Õ»ï¿½ï¿½ï¿½ï¿½ï¿½
+ 
+  sb.e[0]=setb-b;
+  a_+=sb.p*(sb.e[0]-sb.e[1])+sb.d*(sb.e[0]-2*sb.e[1]+sb.e[2]);
+  sa.e[0]=-a_+a;
+  if(sa.e[0]>50)
+    sa.e[0]=50;
+  if(sa.e[0]<-50)
+    sa.e[0]=-50;
+  st+=sa.p*(sa.e[0]-sa.e[1])+sa.d*(sa.e[0]-2*sa.e[1]+sa.e[2]);
+  sb.e[2]=sb.e[1];
+  sb.e[1]=sb.e[0];
+  sa.e[2]=sa.e[1];
+  sa.e[1]=sa.e[0];
+
+  if(st>stree_max-stree_mid)//ï¿½Þ·ï¿½
+    st=stree_max-stree_mid;
+  if(st<stree_min-stree_mid)
+    st=stree_min-stree_mid;  
+ stree=st+stree_mid;
  ftm_pwm_duty(FTM0, FTM_CH3,stree);
- delta_speed=0;                //²îËÙ
- if(stree>stree_mid)
+ delta_speed=0;                //ï¿½ï¿½ï¿½ï¿½
+ if(st>stree_mid)
  { l_set=setspeed-delta_speed/2;
    r_set=setspeed+delta_speed/2;
  }
@@ -78,20 +93,23 @@ void stree_control(float stree)
  }
 }
 void speed_control(void)
-{  float Kp = 0.338659;  //±ÈÀýÒò×Ó                                          
-   float Ki = 0.492012;  //»ý·ÖÒò×Ó  
-   float Kd = 0.035660;  //Î¢·ÖÒò×Ó  
-  float l_out=0;
-  float r_out=0;
-  //get_speed();
- l_out=l_out+l_speed_err0+Kp*(l_speed_err0-l_speed_err1)+Ki*l_speed_err0+Kd*(l_speed_err0-2*l_speed_err1+l_speed_err2);
- r_out=r_out+r_speed_err0+Kp*(r_speed_err0-r_speed_err1)+Ki*r_speed_err0+Kd*(r_speed_err0-2*r_speed_err1+r_speed_err2);
- if(l_out>100)
-   l_out=100;
+{  
+ 
+ // get_speed();
+  sl.e[0]=l_set-l_speed;
+  sr.e[0]=r_set-r_speed;
+ l_out+=sl.p*(sl.e[0]-sl.e[1])+sl.d*(sl.e[0]-2*sl.e[1]+sl.e[2]);
+ r_out+=sr.p*(sr.e[0]-sr.e[1])+sr.d*(sr.e[0]-2*sr.e[1]+sr.e[2]);
+  sl.e[2]=sl.e[1];
+  sl.e[1]=sl.e[0];
+  sr.e[2]=sr.e[1];
+  sr.e[1]=sr.e[0];
+ if(l_out>30)
+   l_out=30;
  if(l_out<0)
    l_out=0;
- if(r_out>100)
-   r_out=100;
+ if(r_out>30)
+   r_out=30;
  if(r_out<0)
    r_out=0;
  ftm_pwm_duty(FTM3, FTM_CH0,r_out);
@@ -100,16 +118,9 @@ void speed_control(void)
 
 void car_control(void)
 { 
-   float stree=0;
-   float Kp = 0.03;  //±ÈÀýÒò×Ó                                          
-   float Kd = 0;  //Î¢·ÖÒò×Ó 
+   get_speed();
+   stree_control();
    
-     
-   stree=stree+Kp*e0+Kd*(e0-2*e1+e2);
-   e2=e1;
-   e1=e0;
-   e0=err;
-   stree_control(stree);
    if(mode==1)
    {
      ftm_pwm_duty(FTM3, FTM_CH0,FULL_ACC);
@@ -117,7 +128,8 @@ void car_control(void)
    } 
    if(mode==2)
    {
-    speed_control();
-
+    //speed_control();
+   ftm_pwm_duty(FTM3, FTM_CH0,FULL_ACC);
+   ftm_pwm_duty(FTM3, FTM_CH7,FULL_ACC);
    }
 }
